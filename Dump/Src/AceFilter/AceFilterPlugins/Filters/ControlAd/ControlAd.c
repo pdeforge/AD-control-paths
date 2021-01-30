@@ -66,8 +66,17 @@ static LPTSTR gcs_GpcFileSysPathAppliesTo[1] = { _T("grouppolicycontainer") };
 static GUID gcs_GuidPropertyGpLink = { 0xf30e3bbe, 0x9ff0, 0x11d1, { 0xb6, 0x03, 0x00, 0x00, 0xf8, 0x03, 0x67, 0xc1 } }; // _T("f30e3bbe-9ff0-11d1-b603-0000f80367c1");
 static LPTSTR gcs_GpLinkAppliesTo[3] = { _T("organizationalunit"),_T("domaindns"),_T("site") };
 
+static GUID gcs_GuidPropertySPN = { 0xf3a64788, 0x5306, 0x11d1, { 0xa9, 0xc5, 0x00, 0x00, 0xf8, 0x03, 0x67, 0xc1 } }; // _T("f3a64788-5306-11d1-a9c5-0000f80367c1");
+static LPTSTR gcs_SPNAppliesTo[2] = { _T("user"), _T("inetorgperson") };
+
+static GUID gcs_GuidPropertyAltSecIdentities = { 0x00fbf30c, 0x91fe, 0x11d1, { 0xae, 0xbc, 0x00, 0x00, 0xf8, 0x03, 0x67, 0xc1 } }; // _T("00fbf30c-91fe-11d1-aebc-0000f80367c1");
+static LPTSTR gcs_AltSecIdentitiesAppliesTo[4] = { _T("user"), _T("computer"), _T("msds-managedserviceaccount"), _T("inetorgperson") };
+
 static GUID gcs_GuidPropertySetMembership = { 0xbc0ac240, 0x79a9, 0x11d0, { 0x90, 0x20, 0x00, 0xc0, 0x4f, 0xc2, 0xd4, 0xcf } }; // _T("bc0ac240-79a9-11d0-9020-00c04fc2d4cf");
 static LPTSTR gcs_MembershipAppliesTo[1] = { _T("group") };
+
+static GUID gcs_GuidPropertySetPublicInfo = { 0xe48d0154, 0xbcf8, 0x11d1, { 0x87, 0x02, 0x00, 0xc0, 0x4f, 0xb9, 0x60, 0x50 } }; // _T("e48d0154-bcf8-11d1-8702-00c04fb96050");
+static LPTSTR gcs_PublicInfoAppliesTo[4] = { _T("user"), _T("computer"), _T("msds-managedserviceaccount"), _T("inetorgperson") };
 
 static GUID gcs_GuidValidatedWriteSelfMembership = { 0xbf9679c0, 0x0de6, 0x11d0, { 0xa2, 0x85, 0x00, 0xaa, 0x00, 0x30, 0x49, 0xe2 } }; // Same as gs_GuidPropertyMember. thanks AD. GUIDs are no longer "UNIQUE"
 static LPTSTR gcs_SelfMembershipAppliesTo[1] = { _T("group") };
@@ -75,10 +84,13 @@ static LPTSTR gcs_SelfMembershipAppliesTo[1] = { _T("group") };
 
 // Control properties and properties sets
 static CONTROL_GUID gcs_GuidsControlProperties[] = {
+        { &gcs_GuidPropertyAltSecIdentities, WRITE_PROP_ALTSECID, gcs_AltSecIdentitiesAppliesTo, ARRAY_COUNT(gcs_AltSecIdentitiesAppliesTo) },
+        { &gcs_GuidPropertySPN, WRITE_PROP_SPN, gcs_SPNAppliesTo, ARRAY_COUNT(gcs_SPNAppliesTo) },
 	{ &gcs_GuidPropertyMember, WRITE_PROP_MEMBER, gcs_MemberAppliesTo, ARRAY_COUNT(gcs_MemberAppliesTo) },
 	{ &gcs_GuidPropertyGpLink, WRITE_PROP_GPLINK, gcs_GpLinkAppliesTo, ARRAY_COUNT(gcs_GpLinkAppliesTo)},
 	{ &gcs_GuidPropertyGpcFileSysPath, WRITE_PROP_GPC_FILE_SYS_PATH, gcs_GpcFileSysPathAppliesTo, ARRAY_COUNT(gcs_GpcFileSysPathAppliesTo) },
 	{ &gcs_GuidPropertySetMembership, WRITE_PROPSET_MEMBERSHIP, gcs_MembershipAppliesTo, ARRAY_COUNT(gcs_MembershipAppliesTo) },
+	{ &gcs_GuidPropertySetPublicInfo, WRITE_PROPSET_PUBINFO, gcs_PublicInfoAppliesTo, ARRAY_COUNT(gcs_PublicInfoAppliesTo) },
 };
 
 // Control extended rights
@@ -123,8 +135,8 @@ void PLUGIN_GENERIC_HELP(
 	API_LOG(Bypass, _T("- Standard rights : WRITE_DAC, WRITE_OWNER"));
 	API_LOG(Bypass, _T("- Extended rights : All, User-Force-Change-Password, DS-Replication-Get-Changes-All, AdmPwd (LAPS)"));
 	API_LOG(Bypass, _T("- Validated writes : All, Self-Membership"));
-	API_LOG(Bypass, _T("- Write properties : Member, GPLink"));
-	API_LOG(Bypass, _T("- Write property-sets : Membership"));
+	API_LOG(Bypass, _T("- Write properties : Member, GPLink, SPN, Alt-Security-Identities"));
+	API_LOG(Bypass, _T("- Write property-sets : Membership, PublicInfo(SPN,alt-security-identities)"));
 	API_LOG(Bypass, _T("This filter set 'relations' on the ACE, and must be combined with the MSR writer for these relations to be output."));
 }
 
@@ -158,9 +170,12 @@ BOOL PLUGIN_FILTER_FILTERACE(
 		- all (empty guid)
 		- member => group class
 		- gPLink (TODO : cannot find a property set containing this attr) => organizationalunit class
+                - Alt-Security-Identities
+                - SPN
 
 	- Property sets :
 		- membership (contains member) => group class (tested, even though MSDN and GUI seems to think groups cannot get this)
+		- Public-Information (contains Service-Principal-Name => users/computers classes. Accounts can be kerberoasted etc. Contains Alt-Security-Identities => maps x509 certs to the user account)
 
 	- Extended rights (ADS_RIGHT_DS_CONTROL_ACCESS) :
 		- all (empty guid)

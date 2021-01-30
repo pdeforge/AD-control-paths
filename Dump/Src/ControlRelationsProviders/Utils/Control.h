@@ -2,6 +2,7 @@
 #define __CONTROL_H__
 
 #define UTILS_REQUIRE_GETOPT_COMPLEX
+#define STATIC_GETOPT
 
 /* --- INCLUDES ------------------------------------------------------------- */
 #include <Windows.h>
@@ -13,10 +14,10 @@
 #include <io.h>
 #include <fcntl.h>
 
-#include "..\libdev\LibUtils\src\UtilsLib.h"
-#include "..\libdev\LibCache\src\CacheLib.h"
-#include "..\libdev\LibCsv\src\CsvLib.h"
-#include "..\libdev\LibLog\src\LogLib.h"
+#include "UtilsLib.h"
+#include "CacheLib.h"
+#include "CsvLib.h"
+#include "LogLib.h"
 
 
 /* --- DEFINES -------------------------------------------------------------- */
@@ -59,7 +60,12 @@ typedef enum _OBJ_CSV_TOKENS {
 	LdpListHomeMDB,
 	LdpListMsExchRoleEntries,
 	LdpListMsExchUserLink,
-	LdpListMsExchRoleLink
+	LdpListMsExchRoleLink,
+	LdpListUAC,
+	LdpListAllowedToDelegateTo,
+	LdpListAllowedToActOnBehalf,
+	LdpListSPN,
+	LdpListDnsHostName,
 } OBJ_CSV_TOKENS;
 
 typedef enum _ACE_CSV_TOKENS {
@@ -92,17 +98,28 @@ typedef struct _CACHE_MAIL_BY_DN {
 	LPTSTR dn;
 	LPTSTR mail;
 } CACHE_MAIL_BY_DN, *PCACHE_MAIL_BY_DN;
+	
+typedef struct _CACHE_OBJECT_BY_SPN {
+	LPTSTR spn;
+	LPTSTR dn;
+} CACHE_OBJECT_BY_SPN, *PCACHE_OBJECT_BY_SPN;
+
+typedef struct _CACHE_OBJECT_BY_DNSHOSTNAME {
+	LPTSTR dnshostname;
+	LPTSTR dn;
+} CACHE_OBJECT_BY_DNSHOSTNAME, *PCACHE_OBJECT_BY_DNSHOSTNAME;
 
 typedef void (FN_USAGE_CALLBACK)(
 	_In_ PTCHAR progName
 	);
-
 
 /* --- VARIABLES ------------------------------------------------------------ */
 DWORD gs_recordNumber;
 BOOL bCacheBuilt;
 PCACHE ppCache;
 PCACHE ppMbxCache;
+PCACHE ppSpnCache;
+PCACHE ppDnsCache;
 FN_USAGE_CALLBACK GenericUsage;
 
 
